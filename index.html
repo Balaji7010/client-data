@@ -934,66 +934,72 @@
             });
             
             // Process button click handler
-            processBtn.addEventListener('click', function() {
-                const file = fileInput.files[0];
-                if (!file) {
-                    alert('Please select a file first.');
-                    return;
+// Process button click handler
+processBtn.addEventListener('click', function() {
+    const file = fileInput.files[0];
+    if (!file) {
+        alert('Please select a file first.');
+        return;
+    }
+    
+    // Auto-save previous data if exists
+    autoSavePreviousData();
+    
+    // Show loading overlay
+    loadingOverlay.style.display = 'flex';
+    
+    // Use setTimeout to allow the loading overlay to appear before processing
+    setTimeout(() => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const contents = e.target.result;
+            
+            try {
+                // Process based on file type
+                if (file.name.endsWith('.csv')) {
+                    // Parse CSV and add Last Updated date
+                    const parsedData = parseCSV(contents);
+                    
+                    // Add Last Updated date to each record
+                    const now = new Date();
+                    const formattedDate = now.toLocaleString();
+                    
+                    parsedData.forEach(record => {
+                        record['Last Updated'] = formattedDate;
+                    });
+                    
+                    clientData = parsedData;
+                    
+                    // ADDED: Save to localStorage for persistence
+                    saveDataToLocalStorage(clientData);
+                    
+                    populateTable(clientData);
+                    
+                    // Show success notification
+                    showNotification('Data successfully processed and saved');
+                } else {
+                    // For demo purposes, we'll use sample data for non-CSV files
+                    alert('Excel parsing is not implemented in this demo. Please use CSV files.');
                 }
-                
-                // Auto-save previous data if exists
-                autoSavePreviousData();
-                
-                // Show loading overlay
-                loadingOverlay.style.display = 'flex';
-                
-                // Use setTimeout to allow the loading overlay to appear before processing
-                setTimeout(() => {
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(e) {
-                        const contents = e.target.result;
-                        
-                        try {
-                            // Process based on file type
-                            if (file.name.endsWith('.csv')) {
-                                // Parse CSV and add Last Updated date
-                                const parsedData = parseCSV(contents);
-                                
-                                // Add Last Updated date to each record
-                                const now = new Date();
-                                const formattedDate = now.toLocaleString();
-                                
-                                parsedData.forEach(record => {
-                                    record['Last Updated'] = formattedDate;
-                                });
-                                
-                                clientData = parsedData;
-                                populateTable(clientData);
-                                
-                                // Show success notification
-                                showNotification('Data successfully processed and updated');
-                            } else {
-                                // For demo purposes, we'll use sample data for non-CSV files
-                                alert('Excel parsing is not implemented in this demo. Please use CSV files.');
-                            }
-                        } catch (error) {
-                            console.error('Error processing file:', error);
-                            alert('Error processing file. Please check the file format and try again.');
-                        } finally {
-                            // Hide loading overlay
-                            loadingOverlay.style.display = 'none';
-                        }
-                    };
-                    
-                    reader.onerror = function() {
-                        alert('Error reading file');
-                        loadingOverlay.style.display = 'none';
-                    };
-                    
-                    reader.readAsText(file);
-                }, 500);
-            });
+            } catch (error) {
+                console.error('Error processing file:', error);
+                alert('Error processing file. Please check the file format and try again.');
+            } finally {
+                // Hide loading overlay
+                loadingOverlay.style.display = 'none';
+            }
+        };
+        
+        reader.onerror = function() {
+            alert('Error reading file');
+            loadingOverlay.style.display = 'none';
+        };
+        
+        reader.readAsText(file);
+    }, 500);
+});
+
             
             // Export table data to CSV
             exportCsvBtn.addEventListener('click', function() {
@@ -1094,6 +1100,62 @@
                 
                 return result;
             }
+            function saveDataToLocalStorage(data) {
+    try {
+        // Convert the data array to a JSON string
+        const serializedData = JSON.stringify(data);
+        
+        // Save to localStorage with a specific key
+        localStorage.setItem('clientDataViewer_data', serializedData);
+        
+        // Save timestamp of when data was last saved
+        localStorage.setItem('clientDataViewer_lastSaved', new Date().toISOString());
+        
+        return true;
+    } catch (error) {
+        console.error('Error saving data to localStorage:', error);
+        return false;
+    }
+}
+
+// Function to load client data from localStorage
+function loadDataFromLocalStorage() {
+    try {
+        // Get the saved data
+        const serializedData = localStorage.getItem('clientDataViewer_data');
+        
+        // If no data exists, return null
+        if (!serializedData) {
+            return null;
+        }
+        
+        // Parse the JSON string back to an array
+        const data = JSON.parse(serializedData);
+        return data;
+    } catch (error) {
+        console.error('Error loading data from localStorage:', error);
+        return null;
+    }
+}
+
+// Function to clear saved data from localStorage
+function clearSavedData() {
+    localStorage.removeItem('clientDataViewer_data');
+    localStorage.removeItem('clientDataViewer_lastSaved');
+}
+
+            function initializeData() {
+    // Try to load data from localStorage first
+    const savedData = loadDataFromLocalStorage();
+    
+    if (savedData && savedData.length > 0) {
+        // Use the saved data if it exists
+        clientData = savedData;
+        populateTable(clientData);
+        showNotification('Loaded saved data from previous session');
+    }
+            }
+            initializeData();
             
 
         });
