@@ -428,6 +428,43 @@
             margin-top: 20px;
         }
         
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 15px 25px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .notification-close {
+            margin-left: 15px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        
+        .notification-close:hover {
+            opacity: 1;
+        }
+        
         /* Animations */
         @keyframes fadeInDown {
             from {
@@ -519,7 +556,7 @@
 <body>
     <div class="container">
         <header class="animate__animated animate__fadeInDown">
-            <h1>Innovation Developer Client Data Viewer</h1>
+            <h1>Client Data Viewer</h1>
             <p class="subtitle">Upload, view, and analyze your client data with ease</p>
         </header>
         
@@ -570,6 +607,7 @@
                             <th>City</th>
                             <th>Type of Construction</th>
                             <th>Status of Lead</th>
+                            <th>Last Updated</th>
                         </tr>
                     </thead>
                     <tbody id="clientTableBody">
@@ -604,6 +642,13 @@
         <p>Processing your data...</p>
     </div>
     
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <span class="notification-icon">✅</span>
+        <span id="notificationMessage">Operation completed successfully</span>
+        <span class="notification-close" onclick="hideNotification()">✕</span>
+    </div>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Elements
@@ -621,6 +666,8 @@
             const fileInput = document.getElementById('dataFile');
             const processBtn = document.getElementById('processBtn');
             const loadingOverlay = document.getElementById('loadingOverlay');
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notificationMessage');
             
             // Pagination variables
             let currentPage = 1;
@@ -630,6 +677,63 @@
             
             // Client data
             let clientData = [];
+            
+            // Auto-save previous data when new file is uploaded
+            function autoSavePreviousData() {
+                if (clientData && clientData.length > 0) {
+                    // Create CSV content
+                    const headers = ['Client Name', 'City', 'Type of Construction', 'Status of Lead', 'Last Updated'];
+                    
+                    let csvContent = headers.join(',') + '\n';
+                    
+                    clientData.forEach(client => {
+                        const row = [
+                            `"${(client['Client Name'] || '').replace(/"/g, '""')}"`,
+                            `"${(client['City'] || '').replace(/"/g, '""')}"`,
+                            `"${(client['Type of Construction'] || '').replace(/"/g, '""')}"`,
+                            `"${(client['Status of Lead'] || '').replace(/"/g, '""')}"`,
+                            `"${(client['Last Updated'] || '').replace(/"/g, '""')}"`
+                        ];
+                        csvContent += row.join(',') + '\n';
+                    });
+                    
+                    // Create download link
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    
+                    // Set link properties
+                    const now = new Date();
+                    const dateStr = now.toISOString().split('T')[0];
+                    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+                    
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', `client_data_backup_${dateStr}_${timeStr}.csv`);
+                    link.style.visibility = 'hidden';
+                    
+                    // Add to document, click and remove
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Show notification
+                    showNotification('Previous data automatically saved as CSV');
+                }
+            }
+            
+            // Function to show notification
+            function showNotification(message) {
+                notificationMessage.textContent = message;
+                notification.classList.add('show');
+                
+                // Auto hide after 5 seconds
+                setTimeout(hideNotification, 5000);
+            }
+            
+            // Function to hide notification
+            window.hideNotification = function() {
+                notification.classList.remove('show');
+            };
             
             // Function to populate table with data
             function populateTable(data) {
@@ -659,6 +763,7 @@
                         <td>${client['City'] || 'N/A'}</td>
                         <td>${client['Type of Construction'] || 'N/A'}</td>
                         <td>${client['Status of Lead'] || 'N/A'}</td>
+                        <td>${client['Last Updated'] || 'N/A'}</td>
                     `;
                     
                     clientTableBody.appendChild(row);
@@ -767,9 +872,8 @@
                 const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
                 const startIndex = (currentPage - 1) * rowsPerPage;
                 const endIndex = Math.min(startIndex + rowsPerPage, filteredRows.length);
-                
-                // Show only rows for current page
-                for (let i = startIndex; i < endIndex; i++) {
+                                // Show only rows for current page
+                                for (let i = startIndex; i < endIndex; i++) {
                     filteredRows[i].style.display = '';
                 }
                 
@@ -837,6 +941,9 @@
                     return;
                 }
                 
+                // Auto-save previous data if exists
+                autoSavePreviousData();
+                
                 // Show loading overlay
                 loadingOverlay.style.display = 'flex';
                 
@@ -850,8 +957,22 @@
                         try {
                             // Process based on file type
                             if (file.name.endsWith('.csv')) {
-                                clientData = parseCSV(contents);
+                                // Parse CSV and add Last Updated date
+                                const parsedData = parseCSV(contents);
+                                
+                                // Add Last Updated date to each record
+                                const now = new Date();
+                                const formattedDate = now.toLocaleString();
+                                
+                                parsedData.forEach(record => {
+                                    record['Last Updated'] = formattedDate;
+                                });
+                                
+                                clientData = parsedData;
                                 populateTable(clientData);
+                                
+                                // Show success notification
+                                showNotification('Data successfully processed and updated');
                             } else {
                                 // For demo purposes, we'll use sample data for non-CSV files
                                 alert('Excel parsing is not implemented in this demo. Please use CSV files.');
@@ -875,15 +996,14 @@
             });
             
             // Export table data to CSV
-                        // Export table data to CSV
-                        exportCsvBtn.addEventListener('click', function() {
+            exportCsvBtn.addEventListener('click', function() {
                 if (!clientData || clientData.length === 0) {
                     alert('No data to export');
                     return;
                 }
                 
                 // Get headers
-                const headers = ['Client Name', 'City', 'Type of Construction', 'Status of Lead'];
+                const headers = ['Client Name', 'City', 'Type of Construction', 'Status of Lead', 'Last Updated'];
                 
                 // Create CSV content
                 let csvContent = headers.join(',') + '\n';
@@ -899,7 +1019,8 @@
                         `"${(client['Client Name'] || '').replace(/"/g, '""')}"`,
                         `"${(client['City'] || '').replace(/"/g, '""')}"`,
                         `"${(client['Type of Construction'] || '').replace(/"/g, '""')}"`,
-                        `"${(client['Status of Lead'] || '').replace(/"/g, '""')}"`
+                        `"${(client['Status of Lead'] || '').replace(/"/g, '""')}"`,
+                        `"${(client['Last Updated'] || '').replace(/"/g, '""')}"`
                     ];
                     csvContent += row.join(',') + '\n';
                 });
@@ -910,14 +1031,20 @@
                 const link = document.createElement('a');
                 
                 // Set link properties
+                const now = new Date();
+                const dateStr = now.toISOString().split('T')[0];
+                
                 link.setAttribute('href', url);
-                link.setAttribute('download', 'client_data.csv');
+                link.setAttribute('download', `client_data_export_${dateStr}.csv`);
                 link.style.visibility = 'hidden';
                 
                 // Add to document, click and remove
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                
+                // Show notification
+                showNotification('Data successfully exported to CSV');
             });
             
             // Function to parse CSV data
@@ -930,11 +1057,36 @@
                 for (let i = 1; i < lines.length; i++) {
                     if (!lines[i].trim()) continue;
                     
-                    const values = lines[i].split(',');
+                    // Handle quoted values with commas inside
+                    let values = [];
+                    let inQuote = false;
+                    let currentValue = '';
+                    
+                    for (let char of lines[i]) {
+                        if (char === '"') {
+                            inQuote = !inQuote;
+                        } else if (char === ',' && !inQuote) {
+                            values.push(currentValue);
+                            currentValue = '';
+                        } else {
+                            currentValue += char;
+                        }
+                    }
+                    
+                    // Add the last value
+                    values.push(currentValue);
+                    
+                    // If simple split works and gives same number of columns, use it
+                    const simpleSplit = lines[i].split(',');
+                    if (simpleSplit.length === headers.length) {
+                        values = simpleSplit;
+                    }
+                    
+                    // Create object from headers and values
                     const obj = {};
                     
                     for (let j = 0; j < headers.length; j++) {
-                        obj[headers[j]] = values[j] ? values[j].trim() : '';
+                        obj[headers[j]] = values[j] ? values[j].trim().replace(/^"|"$/g, '') : '';
                     }
                     
                     result.push(obj);
@@ -943,9 +1095,9 @@
                 return result;
             }
             
+
         });
     </script>
 </body>
 </html>
-
 
