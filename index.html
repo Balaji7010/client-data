@@ -727,18 +727,27 @@
             }
             
             // Function to show notification
-            function showNotification(message) {
-                notificationMessage.textContent = message;
-                notification.classList.add('show');
-                
-                // Auto hide after 5 seconds
-                setTimeout(hideNotification, 5000);
-            }
-            
-            // Function to hide notification
-            window.hideNotification = function() {
-                notification.classList.remove('show');
-            };
+// Function to show notification
+function showNotification(message, type = 'success') {
+    notificationMessage.textContent = message;
+    
+    // Set notification color based on type
+    if (type === 'error') {
+        notification.style.backgroundColor = '#f8d7da';
+        notification.style.color = '#721c24';
+        notification.style.borderColor = '#f5c6cb';
+    } else {
+        notification.style.backgroundColor = '#d4edda';
+        notification.style.color = '#155724';
+        notification.style.borderColor = '#c3e6cb';
+    }
+    
+    notification.classList.add('show');
+    
+    // Auto hide after 5 seconds
+    setTimeout(hideNotification, 5000);
+}
+
             
             // Function to populate table with data
             function populateTable(data) {
@@ -940,6 +949,7 @@
             
             // Process button click handler
 // Process button click handler
+// Process button click handler
 processBtn.addEventListener('click', function() {
     const file = fileInput.files[0];
     if (!file) {
@@ -976,13 +986,20 @@ processBtn.addEventListener('click', function() {
                     
                     clientData = parsedData;
                     
-                    // ADDED: Save to localStorage for persistence
+                    // Save to Firebase
+                    saveDataToFirebase(clientData)
+                        .then(success => {
+                            if (success) {
+                                showNotification('Data successfully saved to server');
+                            } else {
+                                showNotification('Failed to save data to server', 'error');
+                            }
+                        });
+                    
+                    // Also save locally as backup
                     saveDataToLocalStorage(clientData);
                     
                     populateTable(clientData);
-                    
-                    // Show success notification
-                    showNotification('Data successfully processed and saved');
                 } else {
                     // For demo purposes, we'll use sample data for non-CSV files
                     alert('Excel parsing is not implemented in this demo. Please use CSV files.');
@@ -1005,58 +1022,68 @@ processBtn.addEventListener('click', function() {
     }, 500);
 });
 
+
             
             // Export table data to CSV
-            exportCsvBtn.addEventListener('click', function() {
-                if (!clientData || clientData.length === 0) {
-                    alert('No data to export');
-                    return;
-                }
-                
-                // Get headers
-                const headers = ['Client Name', 'City', 'Type of Construction', 'Status of Lead', 'Last Updated'];
-                
-                // Create CSV content
-                let csvContent = headers.join(',') + '\n';
-                
-                // Get data from filtered client data
-                const dataToExport = clientData.filter((_, index) => {
-                    const row = allRows[index];
-                    return filteredRows.includes(row);
-                });
-                
-                dataToExport.forEach(client => {
-                    const row = [
-                        `"${(client['Client Name'] || '').replace(/"/g, '""')}"`,
-                        `"${(client['City'] || '').replace(/"/g, '""')}"`,
-                        `"${(client['Type of Construction'] || '').replace(/"/g, '""')}"`,
-                        `"${(client['Status of Lead'] || '').replace(/"/g, '""')}"`,
-                        `"${(client['Last Updated'] || '').replace(/"/g, '""')}"`
-                    ];
-                    csvContent += row.join(',') + '\n';
-                });
-                
-                // Create download link
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                
-                // Set link properties
-                const now = new Date();
-                const dateStr = now.toISOString().split('T')[0];
-                
-                link.setAttribute('href', url);
-                link.setAttribute('download', `client_data_export_${dateStr}.csv`);
-                link.style.visibility = 'hidden';
-                
-                // Add to document, click and remove
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                // Show notification
-                showNotification('Data successfully exported to CSV');
-            });
+// Export table data to CSV
+exportCsvBtn.addEventListener('click', function() {
+    if (!clientData || clientData.length === 0) {
+        alert('No data to export');
+        return;
+    }
+    
+    // Get headers
+    const headers = ['Client Name', 'City', 'Type of Construction', 'Status of Lead', 'Last Updated'];
+    
+    // Create CSV content
+    let csvContent = headers.join(',') + '\n';
+    
+    // Get data from filtered client data
+    const dataToExport = clientData.filter((_, index) => {
+        const row = allRows[index];
+        return filteredRows.includes(row);
+    });
+    
+    dataToExport.forEach(client => {
+        const row = [
+            `"${(client['Client Name'] || '').replace(/"/g, '""')}"`,
+            `"${(client['City'] || '').replace(/"/g, '""')}"`,
+            `"${(client['Type of Construction'] || '').replace(/"/g, '""')}"`,
+            `"${(client['Status of Lead'] || '').replace(/"/g, '""')}"`,
+            `"${(client['Last Updated'] || '').replace(/"/g, '""')}"`
+        ];
+        csvContent += row.join(',') + '\n';
+    });
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    // Set link properties
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `client_data_export_${dateStr}.csv`);
+    link.style.visibility = 'hidden';
+    
+    // Add to document, click and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Also save current state to Firebase
+    saveDataToFirebase(clientData)
+        .then(success => {
+            if (success) {
+                showNotification('Data exported and saved to server');
+            } else {
+                showNotification('Data exported but failed to save to server', 'error');
+            }
+        });
+});
+
             
             // Function to parse CSV data
             function parseCSV(csvText) {
@@ -1150,17 +1177,62 @@ function loadDataFromLocalStorage() {
         return null;
     }
 }
-            function initializeData() {
-    // Try to load data from localStorage first
-    const savedData = loadDataFromLocalStorage();
+// Function to initialize data from Firebase or sample data
+function initializeData() {
+    // Show loading overlay
+    loadingOverlay.style.display = 'flex';
     
-    if (savedData && savedData.length > 0) {
-        // Use the saved data if it exists
-        clientData = savedData;
-        populateTable(clientData);
-        showNotification('Loaded saved data from previous session');
-    }
+    // Try to load data from Firebase first
+    loadDataFromFirebase()
+        .then(firebaseData => {
+            if (firebaseData && firebaseData.length > 0) {
+                // Use the data from Firebase
+                clientData = firebaseData;
+                populateTable(clientData);
+                showNotification('Loaded data from server');
+            } else {
+                // Try to load from localStorage as backup
+                const localData = loadDataFromLocalStorage();
+                
+                if (localData && localData.length > 0) {
+                    clientData = localData;
+                    populateTable(clientData);
+                    showNotification('Loaded data from local storage');
+                    
+                    // Save local data to Firebase
+                    saveDataToFirebase(localData)
+                        .then(success => {
+                            if (success) {
+                                showNotification('Local data synchronized to server');
+                            }
+                        });
+                } else {
+                    // Fall back to sample data if no saved data exists
+                    loadSampleData();
+                }
             }
+            
+            // Hide loading overlay
+            loadingOverlay.style.display = 'none';
+        })
+        .catch(error => {
+            console.error('Error initializing data:', error);
+            
+            // Try local data as fallback
+            const localData = loadDataFromLocalStorage();
+            
+            if (localData && localData.length > 0) {
+                clientData = localData;
+                populateTable(clientData);
+                showNotification('Loaded data from local storage (server unavailable)');
+            } 
+            
+            
+            // Hide loading overlay
+            loadingOverlay.style.display = 'none';
+        });
+}
+
             initializeData();
             
 
