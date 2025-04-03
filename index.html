@@ -655,7 +655,59 @@
 
   // Initialize Firebase
 
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
+
+<script>
+              const firebaseConfig = {
+apiKey: "AIzaSyC1gqIfMrHLnH_BnRKGfC6uq0z8DCk3Eco",
+  authDomain: "backend-8e8c7.firebaseapp.com",
+  databaseURL: "https://backend-8e8c7-default-rtdb.firebaseio.com",
+  projectId: "backend-8e8c7",
+  storageBucket: "backend-8e8c7.firebasestorage.app",
+  messagingSenderId: "263588572527",
+  appId: "1:263588572527:web:08b0b06bc7cd155db44c9a",
+  measurementId: "G-HRTLRT76QQ"
+
+  };
+  
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  
+  // Get a reference to the database service
+  const database = firebase.database();
+  
+  // Function to save data to Firebase
+  async function saveDataToFirebase(data) {
+    try {
+      await database.ref('clientData').set({
+        data: data,
+        lastUpdated: new Date().toISOString()
+      });
+      return true;
+    } catch (error) {
+      console.error('Error saving to Firebase:', error);
+      return false;
+    }
+  }
+  
+  // Function to load data from Firebase
+  async function loadDataFromFirebase() {
+    try {
+      const snapshot = await database.ref('clientData').once('value');
+      const firebaseData = snapshot.val();
+      
+      if (firebaseData && firebaseData.data) {
+        return firebaseData.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error loading from Firebase:', error);
+      return null;
+    }
+  }
+</script>
     
     <script>
             // Initialize Firebase
@@ -1245,59 +1297,7 @@ function initializeData() {
         });
     </script>
 <!-- Replace your current Firebase imports with these -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-
-<script>
-              const firebaseConfig = {
-apiKey: "AIzaSyC1gqIfMrHLnH_BnRKGfC6uq0z8DCk3Eco",
-  authDomain: "backend-8e8c7.firebaseapp.com",
-  databaseURL: "https://backend-8e8c7-default-rtdb.firebaseio.com",
-  projectId: "backend-8e8c7",
-  storageBucket: "backend-8e8c7.firebasestorage.app",
-  messagingSenderId: "263588572527",
-  appId: "1:263588572527:web:08b0b06bc7cd155db44c9a",
-  measurementId: "G-HRTLRT76QQ"
-
-  };
-  
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  
-  // Get a reference to the database service
-  const database = firebase.database();
-  
-  // Function to save data to Firebase
-  async function saveDataToFirebase(data) {
-    try {
-      await database.ref('clientData').set({
-        data: data,
-        lastUpdated: new Date().toISOString()
-      });
-      return true;
-    } catch (error) {
-      console.error('Error saving to Firebase:', error);
-      return false;
-    }
-  }
-  
-  // Function to load data from Firebase
-  async function loadDataFromFirebase() {
-    try {
-      const snapshot = await database.ref('clientData').once('value');
-      const firebaseData = snapshot.val();
-      
-      if (firebaseData && firebaseData.data) {
-        return firebaseData.data;
-      }
-      return null;
-    } catch (error) {
-      console.error('Error loading from Firebase:', error);
-      return null;
-    }
-  }
-</script>
     
 
 
