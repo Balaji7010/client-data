@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Data Viewer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease;
+        }
+        
+        header h1 {
+            color: #2c3e50;
+            font-size: 2.8rem;
+            margin-top: 20px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+            position: relative;
+            display: inline-block;
+        }
+        
+        header h1::after {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 3px;
+            background: linear-gradient(90deg, #3498db, transparent);
+            bottom: -10px;
+            left: 25%;
+            border-radius: 2px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+        
+        .upload-section {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            animation: fadeInUp 0.8s ease;
+            transform: translateY(0);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .upload-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        
+        .upload-section h2 {
+            margin-bottom: 25px;
+            color: #2c3e50;
+            font-size: 1.8rem;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        .upload-section h2::after {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 3px;
+            background: #3498db;
+            bottom: 0;
+            left: 0;
+            border-radius: 2px;
+        }
+        
+        .file-input-container {
+            position: relative;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 2;
+        }
+        
+        .file-label {
+            display: inline-block;
+            padding: 15px 25px;
+            background-color: #f8f9fa;
+            border: 2px dashed #ced4da;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.1rem;
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-label:hover {
+            background-color: #e9ecef;
+            border-color: #adb5bd;
+            transform: scale(1.02);
+        }
+        
+        .file-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .file-info {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: block;
+            margin: 0 auto;
+            min-width: 200px;
+        }
+        
+        .upload-btn:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #2573a7 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .upload-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-icon {
+            margin-right: 10px;
+        }
+        
+        .data-section {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            animation: fadeInUp 1s ease;
+            animation-delay: 0.2s;
+            animation-fill-mode: both;
+        }
+        
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            gap: 15px;
+            animation: fadeIn 1s ease;
+        }
+        
+        .search-container {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+        
+        .search-container::before {
+            content: '🔍';
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            z-index: 1;
+        }
+        
+        .filter-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        input[type="text"] {
+            padding: 15px 15px 15px 40px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 100%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            border-color: #3498db;
+            box-shadow: 0 2px 10px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+        
+        select {
+            padding: 15px 35px 15px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: white;
+            min-width: 180px;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+        
+        select:focus {
+            border-color: #3498db;
+            box-shadow: 0 2px 10px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            animation: fadeIn 1.2s ease;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 20px;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 16px 20px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 500;
+            color: #2c3e50;
+            position: sticky;
+            top: 0;
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        tr {
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #f1f1f1;
+        }
+        
+        tr:last-child {
+            border-bottom: none;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 60px 0;
+            color: #6c757d;
+            animation: pulse 2s infinite;
+        }
+        
+        .no-data p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        
+        .no-data::before {
+            content: '📊';
+            display: block;
+            font-size: 3rem;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 30px;
+            gap: 20px;
+        }
+        
+        .pagination button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+        
+        .pagination button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #2980b9 0%, #2573a7 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .pagination button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        #pageInfo {
+            font-size: 1rem;
+            color: #6c757d;
+            background-color: #f8f9fa;
+            padding: 8px 15px;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            animation: fadeIn 1s ease;
+        }
+        
+        .empty-state-icon {
+            font-size: 5rem;
+            color: #e0e0e0;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state-text {
+            font-size: 1.2rem;
+            color: #6c757d;
+            margin-bottom: 30px;
+        }
+        
+        .empty-state-action {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .empty-state-action:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #2573a7 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .filters {
+                flex-direction: column;
+            }
+            
+            .filter-container {
+                margin-top: 15px;
+                justify-content: space-between;
+            }
+            
+            select {
+                min-width: 0;
+                flex: 1;
+            }
+            
+            th, td {
+                padding: 12px 15px;
+            }
+            
+            .upload-section, .data-section {
+                padding: 20px;
+            }
+            
+            header h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="animate__animated animate__fadeInDown">
+            <h1>Client Data Viewer</h1>
+            <p class="subtitle">Upload, view, and analyze your client data with ease</p>
+        </header>
+        
+        <section class="upload-section animate__animated animate__fadeInUp">
+            <h2>Upload Client Data</h2>
+            <div class="file-input-container">
+                <input type="file" name="dataFile" id="dataFile" accept=".xlsx,.xls,.csv" required>
+                <label for="dataFile" class="file-label">
+                    <span class="file-icon">📄</span>
+                    <span class="file-text">Choose Excel or CSV file</span>
+                </label>
+                <div class="file-info" id="fileInfo"></div>
+            </div>
+            <button type="button" id="processBtn" class="upload-btn">
+                <span class="btn-icon">📤</span>
+                <span class="btn-text">Upload and Process</span>
+            </button>
+        </section>
+        
+        <section class="data-section animate__animated animate__fadeInUp animate__delay-1s">
+            <div class="filters">
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Search clients...">
+                </div>
+                <div class="filter-container">
+                    <select id="cityFilter">
+                        <option value="">Filter by City</option>
+                        <!-- City options will be populated dynamically -->
+                    </select>
+                    
+                    <select id="statusFilter">
+                        <option value="">Filter by Status</option>
+                        <!-- Status options will be populated dynamically -->
+                    </select>
+                    
+                    <select id="typeFilter">
+                        <option value="">Filter by Type</option>
+                        <!-- Type options will be populated dynamically -->
+                    </select>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="clientTable" class="animate__animated animate__fadeIn">
+                    <thead>
+                        <tr>
+                            <th>Client Name</th>
+                            <th>City</th>
+                            <th>Type of Construction</th>
+                            <th>Status of Lead</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientTableBody">
+                        <!-- Table rows will be populated by JavaScript -->
+                    </tbody>
+                </table>
+                <div class="pagination">
+                    <button id="prevPage" disabled>Previous</button>
+                    <span id="pageInfo">Page 1 of 1</span>
+                    <button id="nextPage" disabled>Next</button>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="exportCsvBtn" class="upload-btn">
+                        <span class="btn-icon">📥</span>
+                        <span class="btn-text">Export to CSV</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="emptyState" class="empty-state animate__animated animate__fadeIn" style="display: none;">
+                <div class="empty-state-icon">📊</div>
+                <p class="empty-state-text">No client data available. Please upload an Excel or CSV file.</p>
+                <label for="dataFile" class="empty-state-action">Upload File</label>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Loading overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Processing your data...</p>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const searchInput = document.getElementById('searchInput');
+            const cityFilter = document.getElementById('cityFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const typeFilter = document.getElementById('typeFilter');
+            const clientTable = document.getElementById('clientTable');
+            const clientTableBody = document.getElementById('clientTableBody');
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            const pageInfo = document.getElementById('pageInfo');
+            const emptyState = document.getElementById('emptyState');
+            const exportCsvBtn = document.getElementById('exportCsvBtn');
+            const fileInput = document.getElementById('dataFile');
+            const processBtn = document.getElementById('processBtn');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            
+            // Pagination variables
+            let currentPage = 1;
+            const rowsPerPage = 10;
+            let filteredRows = [];
+            let allRows = [];
+            
+            // Client data
+            let clientData = [];
+            
+            // Function to populate table with data
+            function populateTable(data) {
+                if (!data || data.length === 0) {
+                    clientTable.style.display = 'none';
+                    document.querySelector('.pagination').style.display = 'none';
+                    exportCsvBtn.style.display = 'none';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+                
+                clientTable.style.display = 'table';
+                document.querySelector('.pagination').style.display = 'flex';
+                exportCsvBtn.style.display = 'block';
+                emptyState.style.display = 'none';
+                
+                // Clear existing rows
+                clientTableBody.innerHTML = '';
+                
+                // Add data rows
+                data.forEach(client => {
+                    const row = document.createElement('tr');
+                    row.className = 'animate__animated animate__fadeIn';
+                    
+                    row.innerHTML = `
+                        <td>${client['Client Name'] || 'N/A'}</td>
+                        <td>${client['City'] || 'N/A'}</td>
+                        <td>${client['Type of Construction'] || 'N/A'}</td>
+                        <td>${client['Status of Lead'] || 'N/A'}</td>
+                    `;
+                    
+                    clientTableBody.appendChild(row);
+                });
+                
+                // Update rows reference
+                allRows = Array.from(clientTableBody.querySelectorAll('tr'));
+                filteredRows = allRows;
+                
+                // Initialize pagination
+                updateTable();
+                
+                // Populate filter dropdowns
+                populateFilterOptions();
+            }
+            
+            // Function to populate filter dropdowns with unique values
+            function populateFilterOptions() {
+                // Clear existing options (except the first one)
+                while (cityFilter.options.length > 1) {
+                    cityFilter.remove(1);
+                }
+                while (statusFilter.options.length > 1) {
+                    statusFilter.remove(1);
+                }
+                while (typeFilter.options.length > 1) {
+                    typeFilter.remove(1);
+                }
+                
+                // Get unique values for each filter
+                const cities = new Set();
+                const statuses = new Set();
+                const types = new Set();
+                
+                clientData.forEach(client => {
+                    if (client['City']) cities.add(client['City']);
+                    if (client['Status of Lead']) statuses.add(client['Status of Lead']);
+                    if (client['Type of Construction']) types.add(client['Type of Construction']);
+                });
+                
+                // Add options to dropdowns
+                cities.forEach(city => {
+                    const option = document.createElement('option');
+                    option.value = city;
+                    option.textContent = city;
+                    cityFilter.appendChild(option);
+                });
+                
+                statuses.forEach(status => {
+                    const option = document.createElement('option');
+                    option.value = status;
+                    option.textContent = status;
+                    statusFilter.appendChild(option);
+                });
+                
+                types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    typeFilter.appendChild(option);
+                });
+            }
+            
+            // Apply filters and search
+            function applyFilters() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const cityValue = cityFilter.value;
+                const statusValue = statusFilter.value;
+                const typeValue = typeFilter.value;
+                
+                filteredRows = allRows.filter(row => {
+                    const cells = Array.from(row.querySelectorAll('td'));
+                    const clientName = cells[0].textContent.toLowerCase();
+                    const city = cells[1].textContent;
+                    const type = cells[2].textContent;
+                    const status = cells[3].textContent;
+                    
+                    // Apply search term filter
+                    const matchesSearch = searchTerm === '' ||
+                                      clientName.includes(searchTerm) ||
+                                      city.toLowerCase().includes(searchTerm) ||
+                                      type.toLowerCase().includes(searchTerm) ||
+                                      status.toLowerCase().includes(searchTerm);
+                    
+                    // Apply dropdown filters
+                    const matchesCity = cityValue === '' || city === cityValue;
+                    const matchesStatus = statusValue === '' || status === statusValue;
+                    const matchesType = typeValue === '' || type === typeValue;
+                    
+                    return matchesSearch && matchesCity && matchesStatus && matchesType;
+                });
+                
+                // Reset to first page when filters change
+                currentPage = 1;
+                updateTable();
+            }
+            
+            // Update table with current page data
+            function updateTable() {
+                // Hide all rows first
+                allRows.forEach(row => {
+                    row.style.display = 'none';
+                });
+                
+                // Calculate pagination
+                const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+                const startIndex = (currentPage - 1) * rowsPerPage;
+                const endIndex = Math.min(startIndex + rowsPerPage, filteredRows.length);
+                
+                // Show only rows for current page
+                for (let i = startIndex; i < endIndex; i++) {
+                    filteredRows[i].style.display = '';
+                }
+                
+                // Update pagination controls
+                pageInfo.textContent = `Page ${currentPage} of ${totalPages || 1}`;
+                prevPageBtn.disabled = currentPage <= 1;
+                nextPageBtn.disabled = currentPage >= totalPages || totalPages === 0;
+            }
+            
+            // Event listeners for filters
+            searchInput.addEventListener('input', applyFilters);
+            cityFilter.addEventListener('change', applyFilters);
+            statusFilter.addEventListener('change', applyFilters);
+            typeFilter.addEventListener('change', applyFilters);
+            
+            // Pagination event listeners
+            prevPageBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updateTable();
+                }
+            });
+            
+            nextPageBtn.addEventListener('click', () => {
+                const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updateTable();
+                }
+            });
+            
+            // File input visual feedback
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const fileName = this.files[0].name;
+                    const fileText = document.querySelector('.file-text');
+                    if (fileText) {
+                        fileText.textContent = fileName;
+                    }
+                    document.querySelector('.file-label').style.backgroundColor = '#d4edda';
+                    document.querySelector('.file-label').style.borderColor = '#c3e6cb';
+                    
+                    // Show file info
+                    const fileInfo = document.getElementById('fileInfo');
+                    const fileSize = (this.files[0].size / 1024).toFixed(2);
+                    fileInfo.textContent = `Selected file: ${fileName} (${fileSize} KB)`;
+                } else {
+                    const fileText = document.querySelector('.file-text');
+                    if (fileText) {
+                        fileText.textContent = 'Choose Excel or CSV file';
+                    }
+                    document.querySelector('.file-label').style.backgroundColor = '#f8f9fa';
+                    document.querySelector('.file-label').style.borderColor = '#ced4da';
+                    
+                    // Clear file info
+                    document.getElementById('fileInfo').textContent = '';
+                }
+            });
+            
+            // Process button click handler
+            processBtn.addEventListener('click', function() {
+                const file = fileInput.files[0];
+                if (!file) {
+                    alert('Please select a file first.');
+                    return;
+                }
+                
+                // Show loading overlay
+                loadingOverlay.style.display = 'flex';
+                
+                // Use setTimeout to allow the loading overlay to appear before processing
+                setTimeout(() => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const contents = e.target.result;
+                        
+                        try {
+                            // Process based on file type
+                            if (file.name.endsWith('.csv')) {
+                                clientData = parseCSV(contents);
+                                populateTable(clientData);
+                            } else {
+                                // For demo purposes, we'll use sample data for non-CSV files
+                                alert('Excel parsing is not implemented in this demo. Please use CSV files.');
+                            }
+                        } catch (error) {
+                            console.error('Error processing file:', error);
+                            alert('Error processing file. Please check the file format and try again.');
+                        } finally {
+                            // Hide loading overlay
+                            loadingOverlay.style.display = 'none';
+                        }
+                    };
+                    
+                    reader.onerror = function() {
+                        alert('Error reading file');
+                        loadingOverlay.style.display = 'none';
+                    };
+                    
+                    reader.readAsText(file);
+                }, 500);
+            });
+            
+            // Export table data to CSV
+                        // Export table data to CSV
+                        exportCsvBtn.addEventListener('click', function() {
+                if (!clientData || clientData.length === 0) {
+                    alert('No data to export');
+                    return;
+                }
+                
+                // Get headers
+                const headers = ['Client Name', 'City', 'Type of Construction', 'Status of Lead'];
+                
+                // Create CSV content
+                let csvContent = headers.join(',') + '\n';
+                
+                // Get data from filtered client data
+                const dataToExport = clientData.filter((_, index) => {
+                    const row = allRows[index];
+                    return filteredRows.includes(row);
+                });
+                
+                dataToExport.forEach(client => {
+                    const row = [
+                        `"${(client['Client Name'] || '').replace(/"/g, '""')}"`,
+                        `"${(client['City'] || '').replace(/"/g, '""')}"`,
+                        `"${(client['Type of Construction'] || '').replace(/"/g, '""')}"`,
+                        `"${(client['Status of Lead'] || '').replace(/"/g, '""')}"`
+                    ];
+                    csvContent += row.join(',') + '\n';
+                });
+                
+                // Create download link
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                
+                // Set link properties
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'client_data.csv');
+                link.style.visibility = 'hidden';
+                
+                // Add to document, click and remove
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+            
+            // Function to parse CSV data
+            function parseCSV(csvText) {
+                const lines = csvText.split('\n');
+                const headers = lines[0].split(',').map(header => header.trim());
+                
+                const result = [];
+                
+                for (let i = 1; i < lines.length; i++) {
+                    if (!lines[i].trim()) continue;
+                    
+                    const values = lines[i].split(',');
+                    const obj = {};
+                    
+                    for (let j = 0; j < headers.length; j++) {
+                        obj[headers[j]] = values[j] ? values[j].trim() : '';
+                    }
+                    
+                    result.push(obj);
+                }
+                
+                return result;
+            }
+            
+            // Load sample data for demonstration
+            function loadSampleData() {
+                const sampleData = [
+                    {
+                        "Client Name": "John Smith",
+                        "City": "New York",
+                        "Type of Construction": "Residential",
+                        "Status of Lead": "Active"
+                    },
+                    {
+                        "Client Name": "Emily Johnson",
+                        "City": "Chicago",
+                        "Type of Construction": "Commercial",
+                        "Status of Lead": "Completed"
+                    },
+                    {
+                        "Client Name": "Michael Brown",
+                        "City": "Los Angeles",
+                        "Type of Construction": "Industrial",
+                        "Status of Lead": "Pending"
+                    },
+                    {
+                        "Client Name": "Sarah Davis",
+                        "City": "San Francisco",
+                        "Type of Construction": "Residential",
+                        "Status of Lead": "Active"
+                    },
+                    {
+                        "Client Name": "Robert Wilson",
+                        "City": "Boston",
+                        "Type of Construction": "Commercial",
+                        "Status of Lead": "Inactive"
+                    },
+                    {
+                        "Client Name": "Jennifer Miller",
+                        "City": "Seattle",
+                        "Type of Construction": "Residential",
+                        "Status of Lead": "Completed"
+                    },
+                    {
+                        "Client Name": "David Garcia",
+                        "City": "Miami",
+                        "Type of Construction": "Industrial",
+                        "Status of Lead": "Active"
+                    },
+                    {
+                        "Client Name": "Lisa Martinez",
+                        "City": "Denver",
+                        "Type of Construction": "Commercial",
+                        "Status of Lead": "Pending"
+                    },
+                    {
+                        "Client Name": "James Rodriguez",
+                        "City": "Austin",
+                        "Type of Construction": "Residential",
+                        "Status of Lead": "Inactive"
+                    },
+                    {
+                        "Client Name": "Michelle Thompson",
+                        "City": "Portland",
+                        "Type of Construction": "Commercial",
+                        "Status of Lead": "Active"
+                    },
+                    {
+                        "Client Name": "Thomas Anderson",
+                        "City": "Atlanta",
+                        "Type of Construction": "Industrial",
+                        "Status of Lead": "Completed"
+                    },
+                    {
+                        "Client Name": "Jessica White",
+                        "City": "Dallas",
+                        "Type of Construction": "Residential",
+                        "Status of Lead": "Pending"
+                    }
+                ];
+                
+                clientData = sampleData;
+                populateTable(clientData);
+            }
+            
+            // Load sample data on page load for demonstration
+            loadSampleData();
+        });
+    </script>
+</body>
+</html>
+
+
